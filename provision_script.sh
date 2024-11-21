@@ -81,34 +81,42 @@ log_checkpoint "Installing python3-pip..."
 apt-get install -y python3-pip || log_and_exit "Failed to install python3-pip."
 verify_command pip3
 
-# 7. Install Ubuntu Desktop Environment
-log_checkpoint "Installing Ubuntu Desktop Environment..."
-apt-get install -y ubuntu-desktop || log_and_exit "Failed to install Ubuntu Desktop."
-if ! dpkg -l | grep -q ubuntu-desktop; then
-  log_and_exit "Ubuntu Desktop installation failed or incomplete."
-else
-  log_checkpoint "Ubuntu Desktop installed successfully."
-fi
+# # 7. Install Ubuntu Desktop Environment
+# log_checkpoint "Installing Ubuntu Desktop Environment..."
+# apt-get install -y ubuntu-desktop || log_and_exit "Failed to install Ubuntu Desktop."
+# if ! dpkg -l | grep -q ubuntu-desktop; then
+#   log_and_exit "Ubuntu Desktop installation failed or incomplete."
+# else
+#   log_checkpoint "Ubuntu Desktop installed successfully."
+# fi
 
-# 8. Install and configure LightDM
-log_checkpoint "Installing LightDM and setting it as default display manager..."
-apt-get install -y lightdm || log_and_exit "Failed to install LightDM."
+# 7. Install XFCE (lightweight desktop environment)
+log_checkpoint "Installing XFCE desktop environment..."
+apt-get install -y xfce4 xfce4-goodies lightdm || log_and_exit "Failed to install XFCE."
 echo "lightdm shared/default-x-display-manager select lightdm" | debconf-set-selections
-dpkg-reconfigure -f noninteractive lightdm || log_and_exit "Failed to configure LightDM as default display manager."
+dpkg-reconfigure -f noninteractive lightdm || log_and_exit "Failed to configure LightDM."
 systemctl restart lightdm || log_and_exit "Failed to restart LightDM."
 verify_service lightdm
 
-# 9. Install GNOME Keyring
-log_checkpoint "Installing and configuring GNOME Keyring..."
-apt-get install -y libpam-gnome-keyring || log_and_exit "Failed to install libpam-gnome-keyring."
-mkdir -p /root/.local/share/keyrings
-cat <<EOF > /root/.local/share/keyrings/login.keyring
-[org.freedesktop.Secret.Collection.Login]
-Name=Login
-DefaultCollection=true
-Unlocked=true
-EOF
-log_checkpoint "GNOME Keyring installed and configured."
+# # 8. Install and configure LightDM
+# log_checkpoint "Installing LightDM and setting it as default display manager..."
+# apt-get install -y lightdm || log_and_exit "Failed to install LightDM."
+# echo "lightdm shared/default-x-display-manager select lightdm" | debconf-set-selections
+# dpkg-reconfigure -f noninteractive lightdm || log_and_exit "Failed to configure LightDM as default display manager."
+# systemctl restart lightdm || log_and_exit "Failed to restart LightDM."
+# verify_service lightdm
+
+# # 9. Install GNOME Keyring
+# log_checkpoint "Installing and configuring GNOME Keyring..."
+# apt-get install -y libpam-gnome-keyring || log_and_exit "Failed to install libpam-gnome-keyring."
+# mkdir -p /root/.local/share/keyrings
+# cat <<EOF > /root/.local/share/keyrings/login.keyring
+# [org.freedesktop.Secret.Collection.Login]
+# Name=Login
+# DefaultCollection=true
+# Unlocked=true
+# EOF
+# log_checkpoint "GNOME Keyring installed and configured."
 
 # 10. Add Mozilla PPA and install Firefox
 log_checkpoint "Adding Mozilla PPA and installing Firefox..."
