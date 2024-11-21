@@ -92,7 +92,11 @@ verify_command pip3
 
 # 7. Install XFCE (lightweight desktop environment)
 log_checkpoint "Installing XFCE desktop environment..."
-apt-get install -y xfce4 xfce4-goodies lightdm || log_and_exit "Failed to install XFCE."
+timeout 600 apt-get install -y xfce4 xfce4-goodies lightdm || {
+  log_and_exit "Failed to install XFCE. Attempting recovery..."
+  dpkg --configure -a || log_and_exit "Failed to recover from XFCE installation error."
+  apt-get install -f || log_and_exit "Failed to fix broken dependencies."
+}
 echo "lightdm shared/default-x-display-manager select lightdm" | debconf-set-selections
 dpkg-reconfigure -f noninteractive lightdm || log_and_exit "Failed to configure LightDM."
 systemctl restart lightdm || log_and_exit "Failed to restart LightDM."
