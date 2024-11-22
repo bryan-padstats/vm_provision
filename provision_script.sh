@@ -90,18 +90,18 @@ verify_command pip3
 #   log_checkpoint "Ubuntu Desktop installed successfully."
 # fi
 
-# 7. Install XFCE (lightweight desktop environment)
-log_checkpoint "Installing XFCE desktop environment..."
-timeout 600 apt-get install -y xfce4 lightdm || {
-#timeout 600 apt-get install -y xfce4 xfce4-goodies lightdm || {
-  log_and_exit "Failed to install XFCE. Attempting recovery..."
-  dpkg --configure -a || log_and_exit "Failed to recover from XFCE installation error."
-  apt-get install -f || log_and_exit "Failed to fix broken dependencies."
-}
-echo "lightdm shared/default-x-display-manager select lightdm" | debconf-set-selections
-dpkg-reconfigure -f noninteractive lightdm || log_and_exit "Failed to configure LightDM."
-systemctl restart lightdm || log_and_exit "Failed to restart LightDM."
-verify_service lightdm
+# # 7. Install XFCE (lightweight desktop environment)
+# log_checkpoint "Installing XFCE desktop environment..."
+# timeout 600 apt-get install -y xfce4 lightdm || {
+# #timeout 600 apt-get install -y xfce4 xfce4-goodies lightdm || {
+#   log_and_exit "Failed to install XFCE. Attempting recovery..."
+#   dpkg --configure -a || log_and_exit "Failed to recover from XFCE installation error."
+#   apt-get install -f || log_and_exit "Failed to fix broken dependencies."
+# }
+# echo "lightdm shared/default-x-display-manager select lightdm" | debconf-set-selections
+# dpkg-reconfigure -f noninteractive lightdm || log_and_exit "Failed to configure LightDM."
+# systemctl restart lightdm || log_and_exit "Failed to restart LightDM."
+# verify_service lightdm
 
 # # 8. Install and configure LightDM
 # log_checkpoint "Installing LightDM and setting it as default display manager..."
@@ -122,6 +122,33 @@ verify_service lightdm
 # Unlocked=true
 # EOF
 # log_checkpoint "GNOME Keyring installed and configured."
+
+# Install XFCE and LightDM with all necessary dependencies
+log_checkpoint "Installing XFCE desktop environment and dependencies..."
+apt-get install -y xfce4 xfce4-goodies lightdm dbus-x11 || log_and_exit "Failed to install XFCE or its dependencies."
+echo "lightdm shared/default-x-display-manager select lightdm" | debconf-set-selections
+dpkg-reconfigure -f noninteractive lightdm || log_and_exit "Failed to configure LightDM."
+systemctl restart lightdm || log_and_exit "Failed to restart LightDM."
+verify_service lightdm
+
+# Configure XRDP to work with XFCE
+log_checkpoint "Configuring XRDP for XFCE..."
+apt-get install -y xrdp xorgxrdp || log_and_exit "Failed to install XRDP."
+systemctl enable xrdp || log_and_exit "Failed to enable XRDP service."
+systemctl start xrdp || log_and_exit "Failed to start XRDP service."
+echo "startxfce4" > /etc/skel/.xsession
+echo "startxfce4" > ~/.xsession
+sed -i 's/^exec .*/exec startxfce4/' /etc/xrdp/startwm.sh
+systemctl restart xrdp || log_and_exit "Failed to restart XRDP."
+verify_service xrdp
+
+# Ensure D-Bus is running
+log_checkpoint "Ensuring D-Bus is active..."
+systemctl enable dbus || log_and_exit "Failed to enable D-Bus."
+systemctl start dbus || log_and_exit "Failed to start D-Bus."
+
+log_checkpoint "XFCE and XRDP configuration completed successfully."
+
 
 # 10. Add Mozilla PPA and install Firefox
 log_checkpoint "Adding Mozilla PPA and installing Firefox..."
