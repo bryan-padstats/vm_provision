@@ -183,6 +183,13 @@ log_checkpoint "Firefox installed successfully."
 
 log_checkpoint "Skipping Xvfb setup to avoid conflicts with XRDP."
 
+
+# Step 10: Create 5 Firefox Profiles with Randomized Settings
+log_checkpoint "Configuring display and permissions for Firefox..."
+export DISPLAY=:0  # Ensure the DISPLAY variable is set
+xhost +SI:localuser:root || log_and_exit "Failed to configure X server permissions."
+
+
 # Step 10: Create 5 Firefox Profiles with Randomized Settings
 log_checkpoint "Creating 5 Firefox profiles with randomized settings..."
 
