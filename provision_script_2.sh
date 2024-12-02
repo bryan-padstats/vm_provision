@@ -101,12 +101,30 @@ log_checkpoint "Firefox installed successfully."
 
 # 7. Detect GUI DISPLAY (Prefer XRDP's :10)
 log_checkpoint "Detecting active DISPLAY for GUI operations..."
-ACTIVE_DISPLAY=$(ps aux | grep -oP "Xorg\s+:\K\d+" | sort -u | grep -m 1 "10")
+# Detect the active DISPLAY (prefer XRDP's :10, fallback to :0)
+log_checkpoint "Detecting active DISPLAY for GUI operations..."
+for i in {1..5}; do
+    ACTIVE_DISPLAY=$(ps aux | grep -oP "Xorg\s+:\K\d+" | sort -u | grep -m 1 "10")
+    if [ -z "$ACTIVE_DISPLAY" ]; then
+        ACTIVE_DISPLAY=$(ps aux | grep -oP "Xorg\s+:\K\d+" | sort -u | grep -m 1 "0")
+    fi
+
+    if [ -n "$ACTIVE_DISPLAY" ]; then
+        export DISPLAY=":$ACTIVE_DISPLAY"
+        log_checkpoint "Using DISPLAY=$DISPLAY for GUI operations."
+        break
+    fi
+
+    log_checkpoint "No active DISPLAY detected. Retrying in 5 seconds..."
+    sleep 5
+done
+
 if [ -z "$ACTIVE_DISPLAY" ]; then
-    log_and_exit "No active DISPLAY detected. Ensure XRDP is running."
+    log_and_exit "No active DISPLAY detected after multiple retries. Ensure XRDP or LightDM is running."
 fi
-export DISPLAY=":$ACTIVE_DISPLAY"
-log_checkpoint "Using DISPLAY=$DISPLAY for GUI operations."
+
+# Grant access to the X server
+xhost +SI:localuser:root || log_and_exit "Failed to configure X server permissions for DISPLAY=$DISPLAY."
 
 # Grant access to the X server
 xhost +SI:localuser:root || log_and_exit "Failed to configure X server permissions for DISPLAY=$DISPLAY."
