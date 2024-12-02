@@ -117,6 +117,7 @@ log_checkpoint "Creating 5 Firefox profiles with randomized settings..."
 PROFILE_NAMES=("profile1" "profile2" "profile3" "profile4" "profile5")
 PROFILE_DIR="/root/.mozilla/firefox"
 
+
 # Predefined user agents and screen resolutions
 USER_AGENTS=(
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0"
@@ -137,6 +138,7 @@ for ((i=0; i<${#PROFILE_NAMES[@]}; i++)); do
 
     PREF_FILE="$PROFILE_DIR/$PROFILE/prefs.js"
     mkdir -p "$PROFILE_DIR/$PROFILE"
+    
 
     # Configure preferences
     cat <<EOF >> "$PREF_FILE"
@@ -158,10 +160,22 @@ log_checkpoint "All Firefox profiles created and configured successfully."
 DESKTOP_DIR="/home/$(whoami)/Desktop"
 mkdir -p "$DESKTOP_DIR"
 
-for PROFILE in "${PROFILE_NAMES[@]}"; do
-    SHORTCUT_FILE="$DESKTOP_DIR/firefox-$PROFILE.desktop"
+# Create a shared directory for Firefox profile shortcuts
+SHARED_DIR="/home/shared/FirefoxProfiles"
+mkdir -p "$SHARED_DIR"
+chmod 777 "$SHARED_DIR"  # Make it accessible to all users
+# Save shortcuts directly in the /home directory
+SHORTCUT_DIR="/home/FirefoxProfiles"
+mkdir -p "$SHORTCUT_DIR"
+chmod 755 "$SHORTCUT_DIR"  # Set appropriate permissions
 
-    log_checkpoint "Creating desktop shortcut for $PROFILE..."
+
+
+# Create shortcuts for all profiles in the /home directory
+for PROFILE in "${PROFILE_NAMES[@]}"; do
+    SHORTCUT_FILE="$SHORTCUT_DIR/firefox-$PROFILE.desktop"
+
+    log_checkpoint "Creating shortcut for $PROFILE in /home..."
     cat <<EOF > "$SHORTCUT_FILE"
 [Desktop Entry]
 Version=1.0
@@ -175,8 +189,30 @@ Categories=Network;WebBrowser;
 EOF
 
     chmod +x "$SHORTCUT_FILE"
-    log_checkpoint "Desktop shortcut created: $SHORTCUT_FILE"
+    log_checkpoint "Shortcut created: $SHORTCUT_FILE"
 done
+
+
+
+# for PROFILE in "${PROFILE_NAMES[@]}"; do
+#     SHORTCUT_FILE="$DESKTOP_DIR/firefox-$PROFILE.desktop"
+
+#     log_checkpoint "Creating desktop shortcut for $PROFILE..."
+#     cat <<EOF > "$SHORTCUT_FILE"
+# [Desktop Entry]
+# Version=1.0
+# Name=Firefox - $PROFILE
+# Comment=Launch Firefox with $PROFILE
+# Exec=firefox --no-remote -P "$PROFILE"
+# Icon=firefox
+# Terminal=false
+# Type=Application
+# Categories=Network;WebBrowser;
+# EOF
+
+#     chmod +x "$SHORTCUT_FILE"
+#     log_checkpoint "Desktop shortcut created: $SHORTCUT_FILE"
+# done
 
 log_checkpoint "All Firefox desktop shortcuts created successfully."
 
