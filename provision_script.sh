@@ -180,29 +180,79 @@ Xvfb :99 -screen 0 ${SCREEN_RES}x24 &
 export DISPLAY=:99
 log_checkpoint "Xvfb configured and running."
 
-# 12. Configure Firefox user agent and disable telemetry
-log_checkpoint "Configuring Firefox user agent and disabling telemetry..."
+
+
+
+# Step 10: Create 5 Firefox Profiles with Randomized Settings
+log_checkpoint "Creating 5 Firefox profiles with randomized settings..."
+
+PROFILE_NAMES=("profile1" "profile2" "profile3" "profile4" "profile5")
+PROFILE_DIR="/root/.mozilla/firefox"
+
+# Predefined user agents and screen resolutions
 USER_AGENTS=(
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0"
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:93.0) Gecko/20100101 Firefox/93.0"
     "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0"
+    "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:91.0) Gecko/20100101 Firefox/91.0"
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0 Safari/537.36"
 )
-RANDOM_USER_AGENT=${USER_AGENTS[$RANDOM % ${#USER_AGENTS[@]}]}
-# Create Firefox profile directory if it doesn't exist
-FIREFOX_PROFILE_DIR=$(find /root/.mozilla/firefox -maxdepth 1 -type d -name "*.default-release" | head -n 1)
-if [ -z "$FIREFOX_PROFILE_DIR" ]; then
-  log_checkpoint "Creating new Firefox profile."
-  firefox -CreateProfile "default-release"
-  FIREFOX_PROFILE_DIR=$(find /root/.mozilla/firefox -maxdepth 1 -type d -name "*.default-release" | head -n 1)
-fi
-cat <<EOF >> "$FIREFOX_PROFILE_DIR/prefs.js"
-user_pref("general.useragent.override", "${RANDOM_USER_AGENT}");
+SCREEN_RESOLUTIONS=("1920x1080" "1366x768" "1280x1024" "1600x900" "1024x768")
+
+for ((i=0; i<${#PROFILE_NAMES[@]}; i++)); do
+    PROFILE=${PROFILE_NAMES[i]}
+    RANDOM_USER_AGENT=${USER_AGENTS[i]}
+    RANDOM_RESOLUTION=${SCREEN_RESOLUTIONS[i]}
+
+    log_checkpoint "Creating Firefox profile: $PROFILE with resolution $RANDOM_RESOLUTION and user agent $RANDOM_USER_AGENT..."
+    firefox -CreateProfile "$PROFILE $PROFILE_DIR/$PROFILE" || log_and_exit "Failed to create Firefox profile: $PROFILE."
+
+    PREF_FILE="$PROFILE_DIR/$PROFILE/prefs.js"
+    mkdir -p "$PROFILE_DIR/$PROFILE"
+
+    # Configure preferences
+    cat <<EOF >> "$PREF_FILE"
+user_pref("browser.shell.checkDefaultBrowser", false);
+user_pref("browser.startup.homepage", "about:blank");
 user_pref("datareporting.healthreport.uploadEnabled", false);
 user_pref("toolkit.telemetry.enabled", false);
 user_pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
 user_pref("browser.ping-centre.telemetry", false);
+user_pref("general.useragent.override", "$RANDOM_USER_AGENT");
+user_pref("layout.css.devPixelsPerPx", "1.0");
 EOF
-log_checkpoint "Firefox user agent configured."
+    log_checkpoint "Configured preferences for $PROFILE."
+done
+
+log_checkpoint "All Firefox profiles created and configured successfully."
+
+
+
+
+# # 12. Configure Firefox user agent and disable telemetry
+# log_checkpoint "Configuring Firefox user agent and disabling telemetry..."
+# USER_AGENTS=(
+#     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0"
+#     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:93.0) Gecko/20100101 Firefox/93.0"
+#     "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0"
+# )
+
+# RANDOM_USER_AGENT=${USER_AGENTS[$RANDOM % ${#USER_AGENTS[@]}]}
+# # Create Firefox profile directory if it doesn't exist
+# FIREFOX_PROFILE_DIR=$(find /root/.mozilla/firefox -maxdepth 1 -type d -name "*.default-release" | head -n 1)
+# if [ -z "$FIREFOX_PROFILE_DIR" ]; then
+#   log_checkpoint "Creating new Firefox profile."
+#   firefox -CreateProfile "default-release"
+#   FIREFOX_PROFILE_DIR=$(find /root/.mozilla/firefox -maxdepth 1 -type d -name "*.default-release" | head -n 1)
+# fi
+# cat <<EOF >> "$FIREFOX_PROFILE_DIR/prefs.js"
+# user_pref("general.useragent.override", "${RANDOM_USER_AGENT}");
+# user_pref("datareporting.healthreport.uploadEnabled", false);
+# user_pref("toolkit.telemetry.enabled", false);
+# user_pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
+# user_pref("browser.ping-centre.telemetry", false);
+# EOF
+# log_checkpoint "Firefox user agent configured."
 
 # 13. Install and configure XRDP
 log_checkpoint "Installing and configuring XRDP..."
