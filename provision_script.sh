@@ -164,24 +164,24 @@ apt-get install -y firefox || log_and_exit "Failed to install Firefox via APT."
 verify_command firefox
 log_checkpoint "Firefox installed successfully."
 
-# 11. Configure random screen resolution
-log_checkpoint "Configuring random screen resolution..."
-RESOLUTION=$((RANDOM % 3))
-if [ "$RESOLUTION" -eq 0 ]; then
-  SCREEN_RES="1920x1080"
-elif [ "$RESOLUTION" -eq 1 ]; then
-  SCREEN_RES="1366x768"
-else
-  SCREEN_RES="1280x1024"
-fi
-log_checkpoint "Screen resolution set to ${SCREEN_RES}."
-apt-get install -y xvfb || log_and_exit "Failed to install Xvfb."
-Xvfb :99 -screen 0 ${SCREEN_RES}x24 &
-export DISPLAY=:99
-log_checkpoint "Xvfb configured and running."
+# # 11. Configure random screen resolution
+# log_checkpoint "Configuring random screen resolution..."
+# RESOLUTION=$((RANDOM % 3))
+# if [ "$RESOLUTION" -eq 0 ]; then
+#   SCREEN_RES="1920x1080"
+# elif [ "$RESOLUTION" -eq 1 ]; then
+#   SCREEN_RES="1366x768"
+# else
+#   SCREEN_RES="1280x1024"
+# fi
+# log_checkpoint "Screen resolution set to ${SCREEN_RES}."
+# apt-get install -y xvfb || log_and_exit "Failed to install Xvfb."
+# Xvfb :99 -screen 0 ${SCREEN_RES}x24 &
+# export DISPLAY=:99
+# log_checkpoint "Xvfb configured and running."
 
 
-
+log_checkpoint "Skipping Xvfb setup to avoid conflicts with XRDP."
 
 # Step 10: Create 5 Firefox Profiles with Randomized Settings
 log_checkpoint "Creating 5 Firefox profiles with randomized settings..."
@@ -226,6 +226,31 @@ done
 
 log_checkpoint "All Firefox profiles created and configured successfully."
 
+# Step 2: Create Desktop Shortcuts
+DESKTOP_DIR="/home/$(whoami)/Desktop"
+mkdir -p "$DESKTOP_DIR"
+
+for PROFILE in "${PROFILE_NAMES[@]}"; do
+    SHORTCUT_FILE="$DESKTOP_DIR/firefox-$PROFILE.desktop"
+
+    log_checkpoint "Creating desktop shortcut for $PROFILE..."
+    cat <<EOF > "$SHORTCUT_FILE"
+[Desktop Entry]
+Version=1.0
+Name=Firefox - $PROFILE
+Comment=Launch Firefox with $PROFILE
+Exec=firefox --no-remote -P "$PROFILE"
+Icon=firefox
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;
+EOF
+
+    chmod +x "$SHORTCUT_FILE"
+    log_checkpoint "Desktop shortcut created: $SHORTCUT_FILE"
+done
+
+log_checkpoint "All Firefox desktop shortcuts created successfully."
 
 
 
